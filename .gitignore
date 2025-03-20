@@ -1,2 +1,4 @@
 go.sum
 .env
+node_modules
+*-lock.json

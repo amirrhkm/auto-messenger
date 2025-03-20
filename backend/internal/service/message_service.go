@@ -30,7 +30,7 @@ func (s *messageService) SendScheduledMessage(ctx context.Context) error {
 	}
 
 	if err := s.client.SendMessage(ctx, msg); err != nil {
-		s.logger.Error("[Error] (messageService.SendScheduledMessage):" + err.Error())
+		s.logger.Error("(messageService.SendScheduledMessage):" + err.Error())
 		return err
 	}
 
