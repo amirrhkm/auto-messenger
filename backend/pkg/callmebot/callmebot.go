@@ -47,24 +47,24 @@ func (c *CallMeBotClient) SendMessage(ctx context.Context, msg Message) error {
 
 	req, err := http.NewRequestWithContext(ctx, "GET", apiURL, nil)
 	if err != nil {
-		return fmt.Errorf("[Error] (callmebot.SendMessage): %w", err)
+		return fmt.Errorf("(callmebot.SendMessage): %w", err)
 	}
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("[Error] (callmebot.SendMessage): %w", err)
+		return fmt.Errorf("(callmebot.SendMessage): %w", err)
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return fmt.Errorf("[Error] (callmebot.SendMessage): %w", err)
+		return fmt.Errorf("(callmebot.SendMessage): %w", err)
 	}
 
 	fmt.Printf("CallMeBot API Response: %s\n", string(body))
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
-		return fmt.Errorf("[Error] (callmebot.SendMessage): unexpected status code: %d, response: %s", resp.StatusCode, string(body))
+		return fmt.Errorf("(callmebot.SendMessage): unexpected status code: %d, response: %s", resp.StatusCode, string(body))
 	}
 
 	return nil
