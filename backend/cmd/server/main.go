@@ -8,62 +8,35 @@ import (
 	"time"
 
 	"auto-messenger/internal/config"
-	"auto-messenger/internal/repository"
 	"auto-messenger/internal/scheduler"
 	"auto-messenger/internal/service"
-	"auto-messenger/pkg/database"
+	"auto-messenger/pkg/callmebot"
 	"auto-messenger/pkg/logger"
-	"auto-messenger/pkg/whatsapp"
 
-	_ "github.com/go-sql-driver/mysql"
+	"github.com/joho/godotenv"
 )
 
 func main() {
-	// Initialize context
+	if err := godotenv.Load(); err != nil {
+		panic("[Error] (godotenv):" + err.Error())
+	}
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	// Load configuration
 	cfg := config.Load()
-
-	// Initialize logger
 	logger := logger.NewLogger(cfg.LogLevel)
 
-	// Initialize WhatsApp client
-	whatsappClient := whatsapp.NewClient(whatsapp.Config{
-		AccessToken:   cfg.WhatsappConfig.AccessToken,
-		PhoneNumberID: cfg.WhatsappConfig.PhoneNumberID,
+	callmeBotClient := callmebot.NewClient(callmebot.Config{
+		PhoneNumber: cfg.CallMeBotConfig.PhoneNumber,
+		ApiKey:      cfg.CallMeBotConfig.ApiKey,
 	})
 
-	// Initialize database connection
-	dbConfig := database.DatabaseConfig{
-		Driver:   cfg.Database.Driver,
-		Host:     cfg.Database.Host,
-		Port:     cfg.Database.Port,
-		User:     cfg.Database.User,
-		Password: cfg.Database.Password,
-		Name:     cfg.Database.Name,
-		SSLMode:  cfg.Database.SSLMode,
-	}
+	messageService := service.NewMessageService(callmeBotClient, logger)
 
-	db, err := database.Connect(dbConfig)
-	if err != nil {
-		logger.Error("Failed to connect to database", "error", err)
-		return
-	}
-	defer db.Close()
-
-	// Initialize repository
-	messageRepo := repository.NewMessageRepository(db)
-
-	// Initialize service
-	messageService := service.NewMessageService(messageRepo, whatsappClient, logger)
-
-	// Initialize scheduler
 	scheduler := scheduler.NewScheduler(messageService, logger)
 	scheduler.Start(ctx)
 
-	// Graceful shutdown
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
