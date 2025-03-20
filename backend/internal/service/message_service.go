@@ -4,54 +4,36 @@ import (
 	"context"
 
 	"auto-messenger/internal/domain"
+	"auto-messenger/pkg/callmebot"
 	"auto-messenger/pkg/logger"
-	"auto-messenger/pkg/whatsapp"
 )
 
+const MessageContent = `Hey there! Just a little reminder that Iftar time is almost here! 🌅✨ Time to get your meal ready and enjoy your break.
+	
+_You are receiving this as part of your daily Iftar reminder!_`
+
 type messageService struct {
-	repo   domain.MessageRepository
-	client whatsapp.Client
+	client callmebot.Client
 	logger logger.Logger
 }
 
-func NewMessageService(repo domain.MessageRepository, client whatsapp.Client, logger logger.Logger) domain.MessageService {
+func NewMessageService(client callmebot.Client, logger logger.Logger) domain.MessageService {
 	return &messageService{
-		repo:   repo,
 		client: client,
 		logger: logger,
 	}
 }
 
-func toWhatsappMessage(msg domain.Message) whatsapp.Message {
-	return whatsapp.Message{
-		ID:          msg.ID,
-		PhoneNumber: msg.PhoneNumber,
-		Content:     msg.Content,
+func (s *messageService) SendScheduledMessage(ctx context.Context) error {
+	msg := callmebot.Message{
+		Content: MessageContent,
 	}
-}
 
-func (s *messageService) SendScheduledMessages(ctx context.Context) error {
-	messages, err := s.repo.GetScheduledMessages(ctx)
-	if err != nil {
+	if err := s.client.SendMessage(ctx, msg); err != nil {
+		s.logger.Error("[Error] (messageService.SendScheduledMessage):" + err.Error())
 		return err
 	}
 
-	for _, msg := range messages {
-		wMsg := toWhatsappMessage(msg)
-		if err := s.client.SendMessage(ctx, wMsg); err != nil {
-			s.logger.Error("Failed to send message", "error", err, "messageID", msg.ID)
-			if err := s.repo.UpdateMessageStatus(ctx, msg.ID, "failed"); err != nil {
-				s.logger.Error("Failed to update message status", "error", err, "messageID", msg.ID)
-			}
-			continue
-		}
-
-		if err := s.repo.UpdateMessageStatus(ctx, msg.ID, "sent"); err != nil {
-			s.logger.Error("Failed to update message status", "error", err, "messageID", msg.ID)
-		}
-
-		s.logger.Info("Message sent successfully", "messageID", msg.ID)
-	}
-
+	s.logger.Info("[Success] (messageService.SendScheduledMessage)")
 	return nil
 }

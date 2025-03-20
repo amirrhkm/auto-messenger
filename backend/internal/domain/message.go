@@ -23,5 +23,5 @@ type MessageRepository interface {
 
 // MessageService defines the interface for message business logic
 type MessageService interface {
-	SendScheduledMessages(ctx context.Context) error
+	SendScheduledMessage(ctx context.Context) error
 }
