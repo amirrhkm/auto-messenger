@@ -1,7 +1,11 @@
-PHONY: migrate-up
-migrate-up:
-	migrate -path ./backend/migrations -database "mysql://root:root@tcp(127.0.0.1:3307)/auto-messenger?parseTime=true" up
+PHONY: build
+build:
+	go build -o auto-messenger backend/cmd/server/main.go
 
-PHONY: migrate-down
-migrate-down:
-	migrate -path ./backend/migrations -database "mysql://root:root@tcp(127.0.0.1:3307)/auto-messenger?parseTime=true" down
+PHONY: run
+run:
+	./auto-messenger
+
+PHONY: hot
+hot:
+	go run backend/cmd/server/main.go
